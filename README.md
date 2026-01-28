@@ -1,2 +1,499 @@
-# nordic_wifi_direct_p2p_simple_connection
-A simple demo for Nordic Wi-Fi Direct P2P connection based on nRF54LM20DK+nRF7002EK2
+# Nordic Wi-Fi Direct P2P Echo
+
+![Nordic Semiconductor](https://img.shields.io/badge/Nordic%20Semiconductor-nRF7002-blue)
+![NCS Version](https://img.shields.io/badge/NCS-v3.0.2-green)
+![Platform](https://img.shields.io/badge/Platform-nRF54LM20%20DK%20%2B%20nRF7002EK2-orange)
+![License](https://img.shields.io/badge/License-LicenseRef--Nordic--5--Clause-lightgrey)
+
+> **A simple Wi-Fi Direct (P2P) connection demo with UDP echo loopback for Nordic nRF54LM20 DK with nRF7002 EK2 Wi-Fi shield**
+
+## 🔍 Overview
+
+This application demonstrates Wi-Fi Direct (P2P) peer-to-peer connection between two Nordic development kits. Wi-Fi Direct allows two devices to connect directly without requiring a traditional access point or router.
+
+After establishing a P2P connection:
+- **Group Owner (GO)** runs a UDP echo server
+- **Client (CLI)** sends UDP packets to GO and receives echo responses with RTT measurement
+
+### 🎯 Key Features
+
+- **📡 Wi-Fi Direct P2P**: Direct device-to-device connection without infrastructure
+- **🔘 Button-Triggered Pairing**: Press BUTTON 0 on both devices simultaneously to start pairing
+- **👑 Role Negotiation**: Automatic GO (Group Owner) / Client role assignment based on intent
+- **🌐 DHCP Server**: Group Owner automatically provides IP addresses to clients
+- **📨 UDP Echo Demo**: Client continuously sends packets to GO, measures round-trip time
+- **💡 LED Status Indicators**: Visual feedback for connection status and device role
+- **📊 Shell Interface**: Wi-Fi and network shell commands for debugging
+
+## 📋 Wi-Fi Direct Concepts
+
+### Device Roles
+
+| Role | Description |
+|------|-------------|
+| **Group Owner (GO)** | Acts like an access point, assigns IP addresses via DHCP |
+| **Client (CLI)** | Connects to the GO, receives IP address via DHCP |
+
+### GO Intent
+
+The GO Intent value (0-15) determines which device becomes the Group Owner:
+- **15**: Always become GO
+- **0**: Always become Client
+- **1-14**: Role negotiated - higher value = more likely to be GO
+
+## 🔧 Hardware Requirements
+
+| Component | Specification | Quantity |
+|-----------|---------------|----------|
+| **Development Board** | nRF54LM20 DK | 2 |
+| **Wi-Fi Shield** | nRF7002 EK2 | 2 |
+| **NCS Version** | v3.2.1+ (with P2P firmware support) | - |
+| **USB Cable** | Type-C or Micro USB | 2 |
+
+## 🏗️ Project Architecture
+
+```
+nordic_wifi_direct_p2p_echo/
+├── src/
+│   ├── main.c                 # Main application with button handling, P2P and UDP echo
+│   ├── wifi_p2p_utils.c/.h    # Wi-Fi P2P API (find, connect, group management)
+│   ├── net_utils.c/.h         # Network utilities (DHCP server, IP configuration)
+│   └── udp_utils.c/.h         # UDP echo client/server with RTT measurement
+├── boards/
+│   └── nrf54lm20dk_nrf54lm20a_cpuapp.conf   # Board-specific config
+├── CMakeLists.txt             # Build configuration
+├── Kconfig                    # Configuration options
+├── prj.conf                   # Main project configuration with P2P support
+├── sysbuild.conf              # Sysbuild for nRF70 Wi-Fi
+├── overlay-p2p-go.conf            # Overlay for GO role (GO intent: 15)
+├── overlay-p2p-cli.conf        # Overlay for Client role (GO intent: 0)
+├── west.yml                   # West manifest
+├── LICENSE                    # Nordic 5-Clause License
+└── README.md                  # This file
+```
+
+### Core Modules
+
+- **`main.c`**: Coordinates P2P operations, handles button input, manages LED indicators and UDP echo
+- **`wifi_p2p_utils`**: Provides P2P APIs (discovery, connection, group management)
+- **`net_utils`**: Network configuration for GO role (IP setup, DHCP server)
+- **`udp_utils`**: UDP echo client/server implementation with RTT measurement
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
+
+Ensure you have the Nordic Connect SDK environment configured:
+- [Nordic Connect SDK v3.2.1+](https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/installation/install_ncs.html) with P2P firmware support
+- nRF54LM20 DK x2 with nRF7002 EK2 shields
+- nRF Command Line Tools
+
+### 2. Build Instructions
+
+Navigate to the project directory and build:
+
+```bash
+cd /opt/nordic/ncs/myApps/nordic_wifi_direct_p2p_echo
+```
+
+#### Build GO Device (Device 1 - Group Owner):
+```bash
+west build -p -b nrf54lm20dk/nrf54lm20a/cpuapp -- \
+    -DSHIELD=nrf7002eb2 \
+    -DSNIPPET=wifi-p2p \
+    -DEXTRA_CONF_FILE=overlay-p2p-go.conf
+```
+
+#### Build Client Device (Device 2):
+```bash
+west build -p -b nrf54lm20dk/nrf54lm20a/cpuapp -- \
+    -DSHIELD=nrf7002eb2 \
+    -DSNIPPET=wifi-p2p \
+    -DEXTRA_CONF_FILE=overlay-p2p-cli.conf
+```
+
+#### Build with Default Configuration (Negotiated Roles):
+```bash
+west build -p -b nrf54lm20dk/nrf54lm20a/cpuapp -- \
+    -DSHIELD=nrf7002eb2 \
+    -DSNIPPET=wifi-p2p
+```
+
+#### Build Options
+
+| Option | Description |
+|--------|-------------|
+| `-DSHIELD=nrf7002eb2` | Use nRF7002 EB2 Wi-Fi shield |
+| `-DSNIPPET=wifi-p2p` | Enable Wi-Fi P2P support snippet |
+| `-DEXTRA_CONF_FILE=overlay-p2p-go.conf` | Use GO configuration (intent=15) |
+| `-DEXTRA_CONF_FILE=overlay-p2p-cli.conf` | Use Client configuration (intent=0) |
+
+**Note**: `CONFIG_NRF70_AP_MODE`, `CONFIG_NET_DHCPV4_SERVER`, and `CONFIG_NRF_WIFI_LOW_POWER=n` are already set in `prj.conf`.
+
+### 3. Flash and Deploy
+
+Build and flash each device:
+
+```bash
+# Flash first device
+west flash
+
+# Connect second device and flash
+west flash
+```
+
+**Important**: Flash both devices with the same firmware before starting.
+
+## 🎮 Operation Guide
+
+### LED Indicators
+
+| LED | Status | Description |
+|-----|--------|-------------|
+| **LED1** | Blinking | P2P Discovery in progress |
+| **LED2** | Solid | P2P Connection established |
+| **LED3** | Solid | Device is Group Owner (GO) + UDP Echo Server running |
+| **LED4** | Solid | Device is Client (CLI) + UDP Echo Client running |
+
+### Hardware Controls
+
+| Button | Function |
+|--------|----------|
+| **BUTTON 0** | Start P2P pairing / Print UDP Echo statistics (when connected) |
+| **BUTTON 1** | Stop UDP Echo test |
+
+### Connection Procedure
+
+```
+┌─────────────────┐                    ┌─────────────────┐
+│   Board 1       │                    │   Board 2       │
+│ (GO Intent: 15) │                    │ (GO Intent: 0)  │
+└────────┬────────┘                    └────────┬────────┘
+         │                                      │
+    [Press BTN1]                          [Press BTN1]
+         │                                      │
+         ▼                                      ▼
+    P2P Find ─────────────────────────────► P2P Find
+         │                                      │
+         ▼                                      ▼
+    Device Found ◄────────────────────────► Device Found
+         │                                      │
+         ▼                                      ▼
+    P2P Connect ◄─────────────────────────► P2P Connect
+         │                                      │
+         ▼                                      ▼
+    ┌────────────┐                    ┌────────────┐
+    │ Become GO  │                    │ Become CLI │
+    └─────┬──────┘                    └─────┬──────┘
+          │                                 │
+    Setup DHCP ──────────────────────► Get IP via DHCP
+          │                                 │
+          ▼                                 ▼
+    ┌─────────────────────────────────────────────┐
+    │         P2P Connection Established!         │
+    │                                             │
+    │  GO IP:  192.168.88.1                       │
+    │  CLI IP: 192.168.88.10 (from DHCP)          │
+    └─────────────────────────────────────────────┘
+          │                                 │
+          ▼                                 ▼
+    Start Echo Server ◄─────────────► Start Echo Client
+          │                                 │
+          │     UDP Packets (port 5001)     │
+          │◄────────────────────────────────│
+          │                                 │
+          │     Echo Response               │
+          │────────────────────────────────►│
+          │                                 │
+          ▼                                 ▼
+    ┌─────────────────────────────────────────────┐
+    │       UDP Echo Loopback Running!            │
+    │                                             │
+    │  Client sends packets every 1000ms          │
+    │  GO echoes packets back                     │
+    │  Client measures RTT (round-trip time)      │
+    └─────────────────────────────────────────────┘
+```
+
+### Step-by-Step Test Procedure
+
+1. **Power on both devices**
+   - Connect USB cables to both nRF54LM20 DK boards
+   - Open serial terminal for each device (115200 baud)
+
+2. **Wait for Wi-Fi ready**
+   - Both devices will show "Wi-Fi is ready!" message
+   - All LEDs should be off initially
+
+3. **Start P2P pairing**
+   - Press BUTTON 0 on **both devices simultaneously** (within ~5 seconds)
+   - LED1 will start blinking on both devices
+
+4. **Observe role assignment**
+   - Device with higher GO intent (15) becomes GO → LED3 lights up
+   - Device with lower GO intent (0) becomes Client → LED4 lights up
+
+5. **Connection established**
+   - LED2 lights up on both devices when connected
+   - GO shows DHCP server status
+   - Client shows assigned IP address
+
+6. **UDP Echo starts automatically**
+   - GO starts UDP echo server on port 5001
+   - Client starts sending UDP packets to GO
+   - Console shows RTT measurements
+
+7. **Monitor and control**
+   - Press BUTTON 0 to print UDP echo statistics
+   - Press BUTTON 1 to stop UDP echo test
+   - Use shell commands to check status
+
+### Shell Commands for Debugging
+
+```bash
+# Wi-Fi interface status
+wifi status
+
+# Network interface status  
+net iface
+
+# Show IP addresses
+net ipv4
+
+# P2P specific commands (if available)
+wifi p2p find
+wifi p2p peers
+wifi p2p connect <MAC> pbc -g <intent> freq=<freq>
+```
+
+## ⚙️ Configuration Options
+
+### Kconfig Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `CONFIG_P2P_TARGET_PEER_MAC` | "" | Target peer MAC address filter (format: "xx:xx:xx:xx:xx:xx") |
+| `CONFIG_P2P_GO_INTENT` | 15 | GO intent value (0-15) |
+| `CONFIG_P2P_DISCOVERY_TIMEOUT` | 30 | Discovery timeout in seconds |
+| `CONFIG_P2P_DISCOVERY_WAIT_MS` | 10000 | Time to wait for peer discovery (ms) |
+| `CONFIG_P2P_GROUP_FORMATION_TIMEOUT_MS` | 30000 | Timeout for group formation (ms) |
+| `CONFIG_P2P_DHCP_TIMEOUT_MS` | 10000 | Timeout for DHCP IP assignment (ms) |
+| `CONFIG_P2P_DHCP_START_DELAY_MS` | 5000 | Delay before starting DHCP client (ms) |
+| `CONFIG_P2P_CLIENT_CONNECT_DELAY_MS` | 2000 | Delay before starting UDP client (ms) |
+| `CONFIG_P2P_OPERATING_CHANNEL` | 11 | Preferred Wi-Fi channel |
+| `CONFIG_P2P_OPERATING_FREQUENCY` | 2462 | Preferred frequency in MHz |
+| `CONFIG_P2P_GO_IP_ADDRESS` | "192.168.88.1" | GO IP address |
+| `CONFIG_P2P_DHCP_SERVER_POOL_START` | "192.168.88.10" | DHCP pool start address |
+| `CONFIG_UDP_ECHO_PORT` | 5001 | UDP echo server/client port |
+| `CONFIG_UDP_ECHO_INTERVAL_MS` | 1000 | Interval between UDP packets (ms) |
+| `CONFIG_UDP_ECHO_PACKET_SIZE` | 64 | Size of UDP packets (bytes) |
+| `CONFIG_UDP_ECHO_COUNT` | 100 | Number of packets (0 = infinite) |
+
+### Two-Device Configuration
+
+For reliable pairing, configure different GO intents on each device:
+
+**Device 1 (Always GO):**
+```
+CONFIG_P2P_GO_INTENT=15
+```
+
+**Device 2 (Always Client):**
+```
+CONFIG_P2P_TARGET_PEER_MAC="f4:ce:36:00:af:12"  # Replace with your GO's MAC
+CONFIG_P2P_GO_INTENT=0
+```
+
+Or use the same intent for negotiated role assignment.
+
+### Peer MAC Address Filtering
+
+When multiple P2P devices are nearby, you can filter which peer to connect to using `CONFIG_P2P_TARGET_PEER_MAC`:
+
+- **Empty string** (default): Connect to the first discovered peer
+- **MAC address string**: Only connect to the peer with the exact MAC address
+
+This is useful in environments with multiple P2P devices to ensure your client connects to the correct GO.
+
+**How to find your GO's MAC address:**
+1. Build and flash the GO device
+2. Press BUTTON 0 to start P2P discovery
+3. Look for the MAC address in the client's terminal output:
+   ```
+   P2P Device Found:
+     MAC: f4:ce:36:00:af:12
+   ```
+4. Use this MAC address in the client's overlay configuration
+
+**Example**: If you have multiple P2P devices nearby and only want to connect to your GO device:
+```
+# On Client device overlay-p2p-cli.conf
+CONFIG_P2P_TARGET_PEER_MAC="f4:ce:36:00:af:12"
+```
+
+The client will ignore other P2P devices (like "211MABTT0N57 UL3J") and only attempt connection with the device matching the specified MAC address.
+
+## 📊 Test Results Reference
+
+### Expected Console Output (GO Device)
+
+```
+*** Starting Nordic Wi-Fi Direct P2P Echo Demo ***
+Board: nrf54lm20dk/nrf54lm20a/cpuapp
+Wi-Fi is ready!
+Wi-Fi P2P initialized
+============================================
+Nordic Wi-Fi Direct P2P Echo Demo Ready
+============================================
+Press BUTTON 0 to start P2P pairing
+...
+BUTTON 0 pressed - Starting P2P pairing
+========================================
+Starting Wi-Fi Direct P2P Pairing...
+GO Intent: 15 (15=GO, 0=Client)
+Target MAC: (any peer)
+========================================
+Searching for P2P peers...
+Event: P2P device found
+P2P Device Found:
+  MAC: f4:ce:36:00:af:12
+  Name: 
+  RSSI: -45 dBm
+Found 1 P2P peer(s)
+Peer found! Initiating connection...
+Attempting P2P connection with peer...
+GO Intent: 15 (15=GO, 0=Client)
+Waiting for P2P group formation...
+Event: P2P group started (we are GO)
+P2P group formed!
+Role: GROUP_OWNER
+Setting up Group Owner network...
+Configured GO IP address: 192.168.88.1
+DHCP server started, pool starting at: 192.168.88.10
+=================================
+Group Owner network ready!
+GO IP: 192.168.88.1
+DHCP Pool: 192.168.88.10
+=================================
+Starting UDP Echo Server on port 5001...
+UDP echo server initialized on port 5001
+UDP Echo Server started!
+Event: Peer joined our group
+UDP Echo Server started - waiting for packets...
+Received 64 bytes from 192.168.88.10:49152
+Echoed 64 bytes back to 192.168.88.10:49152
+...
+```
+
+### Expected Console Output (Client Device)
+
+```
+*** Starting Nordic Wi-Fi Direct P2P Echo Demo ***
+Board: nrf54lm20dk/nrf54lm20a/cpuapp
+Wi-Fi is ready!
+Wi-Fi P2P initialized
+...
+BUTTON 0 pressed - Starting P2P pairing
+========================================
+Starting Wi-Fi Direct P2P Pairing...
+GO Intent: 0 (15=GO, 0=Client)
+Target MAC: (any peer)
+========================================
+Searching for P2P peers...
+Event: P2P device found
+Found 1 P2P peer(s)
+Peer found! Initiating connection...
+Attempting P2P connection with peer...
+GO Intent: 0 (15=GO, 0=Client)
+Waiting for P2P group formation...
+Event: Connected to P2P group (we are Client)
+P2P group formed!
+Role: CLIENT
+Waiting for IP address from GO...
+DHCP bound - IP address obtained
+=== Network Status ===
+IPv4 Address: 192.168.88.10
+Netmask: 255.255.255.0
+Gateway: 192.168.88.1
+======================
+Starting UDP Echo Client...
+Target: 192.168.88.1:5001
+UDP client initialized, target: 192.168.88.1:5001
+UDP Echo Client started!
+  Packet size: 64 bytes
+  Interval: 1000 ms
+  Count: 100
+Echo reply: seq=0, bytes=64, RTT=3.450 ms
+Echo reply: seq=1, bytes=64, RTT=2.890 ms
+Echo reply: seq=2, bytes=64, RTT=3.120 ms
+Echo reply: seq=3, bytes=64, RTT=2.950 ms
+...
+```
+
+### UDP Echo Statistics (BUTTON 0 when connected)
+
+```
+=== UDP Echo Statistics ===
+Packets sent:     100
+Packets received: 100
+Packets lost:     0
+Bytes sent:       6400
+Bytes received:   6400
+RTT min:          2.45 ms
+RTT max:          5.23 ms
+RTT avg:          3.12 ms
+Packet loss:      0%
+===========================
+```
+
+## 🔍 Additional Testing with Zperf
+
+In addition to the built-in UDP echo demo, you can test throughput with zperf:
+
+### Stop the built-in echo first (BUTTON 1), then:
+
+### On GO Device (Server):
+```bash
+zperf udp download 5002
+```
+
+### On Client Device:
+```bash
+zperf udp upload 192.168.88.1 5002 30 192 768K
+```
+
+Expected results:
+- UDP throughput: ~5-15 Mbps depending on environment
+- Latency: ~2-5 ms for direct P2P connection
+
+### Built-in UDP Echo Results
+The built-in UDP echo demo typically shows:
+- RTT (Round-Trip Time): 2-5 ms
+- Packet loss: < 1% in good conditions
+- Consistent performance for real-time applications
+
+## 🛠️ Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| P2P discovery fails | Ensure both devices have P2P firmware support (wifi-p2p snippet) |
+| Connection times out | Press BUTTON 0 on both devices within 5 seconds of each other |
+| DHCP fails | Check if GO is properly configured with static IP before DHCP server starts |
+| No devices found | Verify both devices are in discovery mode, check for Wi-Fi interference |
+| Role not as expected | Adjust `CONFIG_P2P_GO_INTENT` values (15 for GO, 0 for Client) |
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/chshzh/nordic_wifi_direct_p2p_echo/issues)
+- **Nordic DevZone**: [devzone.nordicsemi.com](https://devzone.nordicsemi.com/)
+- **Documentation**: [nRF Connect SDK Documentation](https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/index.html)
+
+## 📝 License
+
+Copyright (c) 2026 Nordic Semiconductor ASA
+
+[SPDX-License-Identifier: LicenseRef-Nordic-5-Clause](LICENSE)
+
+---
+
+**⭐ If this project helps you, please consider giving it a star!**

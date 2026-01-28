@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+
+manifest:
+  version: "1.0"
+
+  self:
+    path: nordic_wifi_direct_p2p_echo
+
+  remotes:
+    - name: ncs
+      url-base: https://github.com/nrfconnect
+    - name: chshzh
+      url-base: https://github.com/chshzh
+
+  projects:
+    - name: sdk-nrf
+      remote: ncs
+      revision: main
+      import: true

@@ -1,0 +1,201 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+#
+
+source "Kconfig.zephyr"
+
+menu "Nordic Wi-Fi Direct P2P Echo"
+
+config P2P_TARGET_PEER_MAC
+	string "Target P2P Peer MAC Address (filter)"
+	default ""
+	help
+	  Set the target peer MAC address to connect to.
+	  Format: "xx:xx:xx:xx:xx:xx" (lowercase hex with colons).
+	  Leave empty to connect to any discovered peer.
+	  Example: Set to "f4:ce:36:00:af:12" on client to only connect
+	  to the GO with that MAC address.
+
+config P2P_GO_INTENT
+	int "P2P GO Intent (0-15)"
+	range 0 15
+	default 15
+	help
+	  Set the Group Owner (GO) intent value.
+	  Higher values indicate higher willingness to become GO.
+	  - 15: Always become GO
+	  - 0: Always become Client
+	  - 1-14: Negotiated based on peer's intent
+
+config P2P_DISCOVERY_TIMEOUT
+	int "P2P Discovery Timeout (seconds)"
+	default 30
+	help
+	  Set the timeout for P2P device discovery.
+	  0 means no timeout (run until stopped).
+
+config P2P_DISCOVERY_WAIT_MS
+	int "P2P Discovery Wait Timeout (milliseconds)"
+	default 10000
+	help
+	  Maximum time to wait for initial peer discovery before
+	  checking the peer list. The discovery continues in background.
+
+config P2P_FIND_STOP_DELAY_MS
+	int "P2P Find Stop Delay (milliseconds)"
+	default 500
+	help
+	  Delay after stopping P2P find before initiating connection.
+	  This mirrors the wifi shell flow where P2P-FIND-STOPPED is
+	  observed before starting GO negotiation.
+
+config P2P_GO_NEG_REQUEST_WAIT_MS
+	int "GO Negotiation Request Wait (milliseconds)"
+	default 3000
+	help
+	  Time for the CLI to wait for the GO negotiation request before
+	  initiating wifi p2p connect as Client.
+
+config P2P_GROUP_FORMATION_TIMEOUT_MS
+	int "P2P Group Formation Timeout (milliseconds)"
+	default 30000
+	help
+	  Maximum time to wait for P2P group formation (GO negotiation
+	  and group setup). Increase if connection is slow.
+
+config P2P_AP_STA_CONNECTED_TIMEOUT_MS
+	int "AP-STA-CONNECTED Wait Timeout (milliseconds)"
+	default 30000
+	help
+	  Maximum time the GO waits for AP-STA-CONNECTED before
+	  configuring IP and starting DHCP server.
+
+config P2P_4WAY_HANDSHAKE_WAIT_MS
+	int "4-Way Handshake Wait (milliseconds)"
+	default 1500
+	help
+	  Delay after AP-STA-CONNECTED to allow EAPOL 4-way handshake
+	  to complete before starting DHCP server.
+
+config P2P_DHCP_TIMEOUT_MS
+	int "DHCP Timeout for Client (milliseconds)"
+	default 10000
+	help
+	  Maximum time for the P2P Client to wait for DHCP IP assignment
+	  from the Group Owner.
+
+config P2P_DHCP_START_DELAY_MS
+	int "DHCP Client Start Delay (milliseconds)"
+	default 5000
+	help
+	  Delay before starting DHCP client on the P2P Client device.
+	  This gives the Group Owner time to configure its IP and start
+	  the DHCP server. Without this delay, the client may send DHCP
+	  requests before the server is ready, causing long retry delays.
+
+config P2P_CLIENT_CONNECT_DELAY_MS
+	int "Client Connect Delay (milliseconds)"
+	default 2000
+	help
+	  Delay after getting IP address before starting UDP client.
+	  This gives the GO time to start its echo server.
+
+config P2P_OPERATING_CHANNEL
+	int "P2P Operating Channel"
+	default 11
+	help
+	  Set the preferred Wi-Fi channel for P2P group operation.
+	  Channel 11 (2462 MHz) is commonly used for P2P.
+
+config P2P_OPERATING_FREQUENCY
+	int "P2P Operating Frequency (MHz)"
+	default 2462
+	help
+	  Set the preferred frequency in MHz for P2P group operation.
+	  2462 MHz corresponds to channel 11 in 2.4 GHz band.
+
+choice P2P_CONNECTION_METHOD
+	prompt "P2P Connection Method"
+	default P2P_METHOD_PBC
+
+config P2P_METHOD_PBC
+	bool "Push Button Configuration (PBC)"
+	help
+	  Use Push Button Configuration for P2P connection.
+	  This is the simplest method - just press button on both devices.
+
+config P2P_METHOD_DISPLAY
+	bool "Display PIN"
+	help
+	  Display a PIN that the peer device needs to enter.
+
+config P2P_METHOD_KEYPAD
+	bool "Keypad PIN"
+	help
+	  Enter a PIN that is displayed on the peer device.
+endchoice
+
+config P2P_DHCP_SERVER_POOL_START
+	string "DHCP Server Pool Start Address"
+	default "192.168.88.10"
+	help
+	  Set the start IP address of the DHCP pool when acting as GO.
+
+config P2P_GO_IP_ADDRESS
+	string "GO IP Address"
+	default "192.168.88.1"
+	help
+	  Set the IP address for the Group Owner.
+
+config P2P_GO_IP_NETMASK
+	string "GO IP Netmask"
+	default "255.255.255.0"
+	help
+	  Set the netmask for the P2P group network.
+
+config P2P_SAMPLE_START_WIFI_THREAD_STACK_SIZE
+	int "Stack size for Wi-Fi start thread"
+	default 5200
+	help
+	  Set the stack size for the Wi-Fi start thread.
+
+config P2P_REG_DOMAIN
+	string "Regulatory Domain (ISO/IEC alpha2 country code)"
+	default "00"
+	help
+	  Set the regulatory domain country code.
+	  Use "00" for world regulatory.
+
+menu "UDP Echo Demo Configuration"
+
+config UDP_ECHO_PORT
+	int "UDP Echo Port"
+	default 5001
+	help
+	  Set the UDP port for the echo server/client.
+
+config UDP_ECHO_INTERVAL_MS
+	int "UDP Packet Send Interval (ms)"
+	default 1000
+	help
+	  Set the interval between UDP packet transmissions in milliseconds.
+
+config UDP_ECHO_PACKET_SIZE
+	int "UDP Packet Size (bytes)"
+	default 64
+	range 16 1024
+	help
+	  Set the size of UDP packets to send.
+
+config UDP_ECHO_COUNT
+	int "Number of UDP Echo Packets (0 = infinite)"
+	default 0
+	help
+	  Set the number of UDP packets to send.
+	  0 means send continuously until stopped.
+
+endmenu
+
+endmenu
