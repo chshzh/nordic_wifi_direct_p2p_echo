@@ -2,7 +2,7 @@
 
 ![Nordic Semiconductor](https://img.shields.io/badge/Nordic%20Semiconductor-nRF7002-blue)
 ![NCS Version](https://img.shields.io/badge/NCS-main%20branch-green)
-![Platform](https://img.shields.io/badge/Platform-nRF54LM20%20DK%20%2B%20nRF7002EK2-orange)
+![Platform](https://img.shields.io/badge/Platform-nRF54LM20%20DK%20%2B%20nRF7002%20EBII-orange)
 ![License](https://img.shields.io/badge/License-LicenseRef--Nordic--5--Clause-lightgrey)
 
 > **A simple Wi-Fi Direct (P2P) connection demo with UDP echo loopback for Nordic nRF54LM20 DK with nRF7002EB2 Wi-Fi shield**
@@ -45,7 +45,7 @@ The GO Intent value (0-15) determines which device becomes the Group Owner:
 | Component | Specification | Quantity |
 |-----------|---------------|----------|
 | **Development Board** | nRF54LM20 DK | 2 |
-| **Wi-Fi Shield** | nRF7002 EK2 | 2 |
+| **Wi-Fi Shield** | nRF7002 EBII | 2 |
 | **NCS Version** | main branch (with P2P firmware support) | - |
 | **USB Cable** | Type-C or Micro USB | 2 |
 
@@ -87,7 +87,7 @@ Ensure you have the Nordic Connect SDK environment configured:
   - In VS Code, navigate to: **nRF Connect -> Manage SDKs -> Third-party Git repository**
   - Repository URL: `https://github.com/nrfconnect/sdk-nrf`
   - Select the `main` branch
-- nRF54LM20 DK x2 with nRF7002 EK2 shields
+- nRF54LM20 DK x2 with nRF7002 EBII shields
 - nRF Command Line Tools
 
 ### 2. Build Instructions
