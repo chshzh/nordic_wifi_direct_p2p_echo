@@ -353,7 +353,8 @@ void udp_echo_print_stats(const struct udp_echo_stats *stats)
 	LOG_INF("Bytes sent:       %u", stats->bytes_sent);
 	LOG_INF("Bytes received:   %u", stats->bytes_received);
 
-	if (stats->packets_received > 0) {
+	/* Only print RTT stats if they were actually measured (client only) */
+	if (stats->packets_received > 0 && stats->rtt_min_us != UINT32_MAX) {
 		LOG_INF("RTT min:          %u.%03u ms", stats->rtt_min_us / 1000,
 			stats->rtt_min_us % 1000);
 		LOG_INF("RTT max:          %u.%03u ms", stats->rtt_max_us / 1000,

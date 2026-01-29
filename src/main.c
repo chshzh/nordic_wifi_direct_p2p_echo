@@ -585,7 +585,11 @@ static void button_handler(uint32_t button_state, uint32_t has_changed)
 			k_work_submit(&p2p_start_work);
 		} else {
 			LOG_INF("BUTTON 0 pressed - Print UDP Echo stats");
-			udp_echo_print_stats(&echo_stats);
+			if (ctx->role == WIFI_P2P_ROLE_GO) {
+				LOG_INF("GO is echo server only. Check CLI device for UDP Echo statistics.");
+			} else {
+				udp_echo_print_stats(&echo_stats);
+			}
 		}
 	}
 
