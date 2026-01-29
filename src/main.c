@@ -43,7 +43,7 @@ static inline char *format_mac_addr(const uint8_t *mac, char *buf, size_t buf_le
 	return buf;
 }
 
-/* LED definitions */
+/* LED definitions (board LEDs are LED0..LED3) */
 #define LED_P2P_FINDING    DK_LED1
 #define LED_P2P_CONNECTED  DK_LED2
 #define LED_GO_ROLE        DK_LED3
@@ -103,9 +103,11 @@ static void start_udp_echo_client(const char *server_ip);
 static void led_blink_handler(struct k_work *work)
 {
 	struct wifi_p2p_context *ctx = wifi_p2p_get_context();
+	bool should_blink = p2p_pairing_in_progress ||
+			    ctx->state == WIFI_P2P_STATE_FINDING ||
+			    ctx->state == WIFI_P2P_STATE_CONNECTING;
 
-	if (ctx->state == WIFI_P2P_STATE_FINDING ||
-	    ctx->state == WIFI_P2P_STATE_CONNECTING) {
+	if (should_blink) {
 		led_blink_state = !led_blink_state;
 		dk_set_led(LED_P2P_FINDING, led_blink_state);
 		k_work_schedule(&led_blink_work, K_MSEC(250));
@@ -695,11 +697,14 @@ void start_wifi_thread(void)
 		LOG_INF("BUTTON 0: Start pairing / Print stats");
 		LOG_INF("BUTTON 1: Stop UDP Echo");
 		LOG_INF("");
-		LOG_INF("LED1: P2P Discovery (blink)");
-		LOG_INF("LED2: P2P Connected");
-		LOG_INF("LED3: Group Owner (GO)");
-		LOG_INF("LED4: Client (CLI)");
+		LOG_INF("LED0: P2P Discovery (on during pairing)");
+		LOG_INF("LED1: P2P Connected");
+		LOG_INF("LED2: Group Owner (GO)");
+		LOG_INF("LED3: Client (CLI)");
 		LOG_INF("============================================");
+		LOG_INF("");
+		LOG_INF(">>> Please press BUTTON 0 on two devices at the same time to start pairing <<<");
+		LOG_INF("");
 
 		/* Keep running and wait for button press or Wi-Fi state change */
 		ret = k_sem_take(&wifi_ready_sem, K_FOREVER);
